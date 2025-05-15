@@ -20,7 +20,7 @@ pipeline {
                     sh """
                         cd 10-sg
                         terraform init -reconfigure
-                        terraform plan
+                        terraform plan -out tfplan
                     """
                 }
                  
