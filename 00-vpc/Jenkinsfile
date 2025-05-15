@@ -1,72 +1,65 @@
 pipeline {
-    agent {
-        label 'AGENT-1'
+    agent { label 'AGENT-1' }
+    environment { 
+        PROJECT = 'EXPENSE'
+        COMPONENT = 'BACKEND' 
+        DEPLOY_TO = "production"
     }
-    options{
-        timeout(time: 30, unit: 'MINUTES')
+    options {
         disableConcurrentBuilds()
+        timeout(time: 30, unit: 'MINUTES')
         ansiColor('xterm')
     }
-    // environment {
-    //     DEBUG = 'true'
-    // }
-
-    parameters {
-        choice(name: 'ACTION', choices: ['apply', 'destroy'], description: 'Select Action')
-    }
+    /* parameters{
+        string(name: 'PERSON', defaultValue: 'Mr Jenkins', description: 'Who should I say hello to?')
+        text(name: 'BIOGRAPHY', defaultValue: '', description: 'Enter some information about the person')
+        booleanParam(name: 'TOGGLE', defaultValue: true, description: 'Toggle this value')
+        choice(name: 'CHOICE', choices: ['One', 'Two', 'Three'], description: 'Pick something')
+        password(name: 'PASSWORD', defaultValue: 'SECRET', description: 'Enter a password')
+    } */
     stages {
-        stage('Init and Plan') {
+        stage('Init') {
             steps {
+               script{
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
                         cd 00-vpc
                         terraform init -reconfigure
-                        terraform plan -out=tfplan
+                        terraform plan
                     """
                 }
+                 
+               }
             }
         }
-
-        stage('Apply or Destroy') {
-            /* input {
-                message "Should we continue to ${params.ACTION}"
+        stage('Apply') {
+            input {
+                message "Should we continue?"
                 ok "Yes, we should."
-            } */
+            }
             steps {
+               script{
                 withAWS(region: 'us-east-1', credentials: 'aws-creds') {
                     sh """
                         cd 00-vpc
-                        if [ ${params.ACTION} == 'apply' ]
-                        then
-                            terraform apply -auto-approve tfplan
-                        elif [ ${params.ACTION} == 'destroy' ]
-                        then
-                            terraform destroy -auto-approve
-                        fi
+                        terraform apply -auto-approve
                     """
                 }
+                 
+               }
             }
         }
-        /* stage ('Trigger SG') {
-            when {
-                expression { params.ACTION == 'apply' }
-            }
-            steps{
-                build job: '10-sg', parameters: [string(name: 'ACTION', value: "apply")], wait: false
-            }
-        } */
     }
-
-    post {
-        always{
-            echo "This sections runs always"
+    post { 
+        always { 
+            echo 'I will always say Hello again!'
             deleteDir()
         }
-        success{
-            echo "This section run when pipeline success"
+        failure { 
+            echo 'I will run when pipeline is failed'
         }
-        failure{
-            echo "This section run when pipeline failure"
+        success { 
+            echo 'I will run when pipeline is success'
         }
     }
 }
