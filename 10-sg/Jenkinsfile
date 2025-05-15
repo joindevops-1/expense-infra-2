@@ -79,6 +79,24 @@ pipeline {
                 }
             }
         }
+        stage('Sequential') {
+            when {
+                expression { params.ACTION == 'apply' }
+            }
+            stages {
+                stage('ACM') {
+                    steps {
+                        build job: '50-acm', parameters: [string(name: 'ACTION', value: "apply")]
+                    }
+                }
+                stage('ALB') {
+                    steps {
+                        build job: '60-ingress-alb', parameters: [string(name: 'ACTION', value: "apply")], wait: false
+                    }
+                }
+            }
+                
+        }
     }
     post { 
         always { 
